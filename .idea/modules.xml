@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/SleepSaFE.iml" filepath="$PROJECT_DIR$/.idea/SleepSaFE.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/SPADE.iml" filepath="$PROJECT_DIR$/.idea/SPADE.iml" />
     </modules>
   </component>
 </project>

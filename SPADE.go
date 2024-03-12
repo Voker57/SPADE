@@ -1,7 +1,7 @@
-package SleepSaFE
+package SPADE
 
 import (
-	"SleepSaFE/utils"
+	"SPADE/utils"
 	"crypto/rand"
 	"math/big"
 )
