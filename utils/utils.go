@@ -3,6 +3,8 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"math/big"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -16,7 +18,7 @@ func HandleError(e error) {
 }
 
 // NormalizeDatasets this function removes zeros from hypnogram values
-// by add 1 to all elements
+// by adding 1 to all elements
 // Do not run this twice :)
 func NormalizeDatasets() {
 	dir := "../usecases/dataset"
@@ -85,4 +87,23 @@ func NormalizeDatasets() {
 		}
 	}
 
+}
+
+func CountValues(data []*big.Int, v int) {
+
+}
+
+// GenDummyData generate dummy a vector of integers with "ptVecSize" elements,
+// for each user, the values are going to be between 1 and "maxValue"
+func GenDummyData(numUsers, ptVecSize int, maxValue int64) [][]int {
+	// generate random data for test
+	dummyData := make([][]int, numUsers)
+	for j := 0; j < numUsers; j++ {
+		dummyData[j] = make([]int, ptVecSize)
+		for i := 0; i < ptVecSize; i++ {
+			dummyData[j][i] = int(rand.Int63n(maxValue) + 1)
+		}
+	}
+
+	return dummyData
 }

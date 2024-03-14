@@ -1,54 +1,85 @@
 package SPADE
 
 import (
+	"SPADE/utils"
 	"fmt"
 	"math/big"
-	"math/rand"
 	"testing"
 )
 
 func TestSpade(t *testing.T) {
-	ptVecSize := 1000
-	numUsers := 50
+	for _, tc := range TestVector {
+		fmt.Println(TestString("SPADE", tc))
+		testSpade(t, tc.n, tc.m, tc.l, tc.v)
+	}
+	//tc := TestVector[0]
+	//fmt.Println(TestString("SPADE", tc))
+	//testSpade(t, tc.n, tc.m, tc.l, tc.v)
+}
+
+func testSpade(t *testing.T, n int, m int, l int64, v int) {
+	dummyData := utils.GenDummyData(n, m, l)
 
 	spade := NewSpade()
-	var sk, pk, dk, res []*big.Int
+	var sks, pks, dks, res []*big.Int
 	var ciphertexts [][]*big.Int
 
-	// generate random data for test
-	dummyData := make([][]int, numUsers)
-	for j := 0; j < numUsers; j++ {
-		dummyData[j] = make([]int, ptVecSize)
-		for i := 0; i < ptVecSize; i++ {
-			dummyData[j][i] = int(rand.Int63n(10) + 1)
-		}
-	}
-
 	t.Run("Setup", func(t *testing.T) {
-		sk, pk = spade.setup(ptVecSize, numUsers)
+		sks, pks = spade.setup(n, m)
 	})
 
 	// create dummy registration keys
-	regKeys := make([]*big.Int, numUsers)
-	for i := 0; i < numUsers; i++ {
-		alpha := spade.RandomElementInZMod()
-		regKeys[i] = spade.register(alpha)
+	alphas := make([]*big.Int, n)
+	regKeys := make([]*big.Int, n)
+
+	// to test one user registration
+	t.Run("Register", func(t *testing.T) {
+		alphas[0] = spade.RandomElementInZMod()
+		regKeys[0] = spade.register(alphas[0])
+	})
+
+	// do the registration for the rest of users
+	for i := 1; i < n; i++ {
+		alphas[i] = spade.RandomElementInZMod()
+		regKeys[i] = spade.register(alphas[i])
 	}
 
 	t.Run("Encryption", func(t *testing.T) {
-		ciphertexts = spade.encrypt(pk, regKeys[0], dummyData[0])
+		ciphertexts = spade.encrypt(pks, alphas[0], dummyData[0])
 	})
 
-	t.Run("FEKeyGen", func(t *testing.T) {
-		dk = spade.keygen(0, 1, sk, regKeys)
+	t.Run("keyDerivation", func(t *testing.T) {
+		dks = spade.keyDerivation(0, v, sks, regKeys)
 	})
 
 	t.Run("Decryption", func(t *testing.T) {
-		res = spade.decrypt(dk, 1, ciphertexts)
+		res = spade.decrypt(dks, v, ciphertexts)
 	})
 
 	if len(res) != len(dummyData[0]) {
 		t.Errorf("Decrypt failed: invalid length of decrypted message slice")
 	}
-	fmt.Println(res)
+
+	//fmt.Println("data: ", dummyData[0])
+	//fmt.Println("res: ", res)
+	verifyResults(dummyData[0], res, v)
+}
+
+func verifyResults(originalData []int, res []*big.Int, v int) {
+	nMatchEls := 0
+	for i := 0; i < len(originalData); i++ {
+		if originalData[i] == v {
+			tmp := new(big.Int).SetInt64(int64(originalData[i]))
+			if res[i].Cmp(tmp) != 0 {
+				// the element from results vector is not equal to the one from original data
+				// which means that we are not getting the correct results!!
+				nMatchEls++
+			}
+		}
+	}
+	if nMatchEls != 0 {
+		fmt.Println("=== FAIL: there are ", nMatchEls, " elements from the results vector, that are not equal to the original data!")
+	} else {
+		fmt.Println("=== PASS: Hooray!")
+	}
 }

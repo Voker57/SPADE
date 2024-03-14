@@ -1,61 +1,59 @@
 package SPADE
 
 import (
+	"SPADE/utils"
+	"fmt"
 	"math/big"
-	"math/rand"
 	"testing"
 )
 
 func BenchmarkSpade(b *testing.B) {
-	benchmarkSpade(b)
+	for _, tc := range TestVector {
+		fmt.Println(TestString("SPADE", tc))
+		benchmarkSpade(b, tc.n, tc.m, tc.l, tc.v)
+	}
 }
 
-func benchmarkSpade(b *testing.B) {
+func benchmarkSpade(b *testing.B, n int, m int, l int64, v int) {
 	if testing.Short() {
 		b.Skip("skipping benchmark in short mode.")
 	}
 
-	ptVecSize := 100
-	numUsers := 50
+	dummyData := utils.GenDummyData(n, m, l)
 
 	spade := NewSpade()
-	var sk, pk, dk, res []*big.Int
+	var sks, pks, dks, res []*big.Int
 	var ciphertexts [][]*big.Int
-
-	// generate random data for test
-	dummyData := make([][]int, numUsers)
-	for j := 0; j < numUsers; j++ {
-		dummyData[j] = make([]int, ptVecSize)
-		for i := 0; i < ptVecSize; i++ {
-			dummyData[j][i] = int(rand.Int63n(10) + 1)
-		}
-	}
 
 	b.Run("Setup", func(b *testing.B) {
 		b.ResetTimer()
-		sk, pk = spade.setup(ptVecSize, numUsers)
+		sks, pks = spade.setup(n, m)
 	})
 
 	// create dummy registration keys
-	regKeys := make([]*big.Int, numUsers)
-	for i := 0; i < numUsers; i++ {
-		alpha := spade.RandomElementInZMod()
-		regKeys[i] = spade.register(alpha)
-	}
+	alphas := make([]*big.Int, n)
+	regKeys := make([]*big.Int, n)
+
+	b.Run("Register", func(b *testing.B) {
+		for i := 0; i < n; i++ {
+			alphas[i] = spade.RandomElementInZMod()
+			regKeys[i] = spade.register(alphas[i])
+		}
+	})
 
 	b.Run("Encryption", func(b *testing.B) {
 		b.ResetTimer()
-		ciphertexts = spade.encrypt(pk, regKeys[0], dummyData[0])
+		ciphertexts = spade.encrypt(pks, alphas[0], dummyData[0])
 	})
 
-	b.Run("FEKeyDer", func(b *testing.B) {
+	b.Run("keyDerivation", func(b *testing.B) {
 		b.ResetTimer()
-		dk = spade.keygen(0, 1, sk, regKeys)
+		dks = spade.keyDerivation(0, v, sks, regKeys)
 	})
 
 	b.Run("Decryption", func(b *testing.B) {
 		b.ResetTimer()
-		res = spade.decrypt(dk, 1, ciphertexts)
+		res = spade.decrypt(dks, v, ciphertexts)
 	})
 
 	if len(res) != len(dummyData[0]) {
