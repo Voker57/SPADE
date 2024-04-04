@@ -27,7 +27,7 @@ func benchmarkSpade(b *testing.B, n int, m int, l int64, v int) {
 
 	b.Run("Setup", func(b *testing.B) {
 		b.ResetTimer()
-		sks, pks = spade.setup(n, m)
+		sks, pks = spade.Setup(n, m)
 	})
 
 	// create dummy registration keys
@@ -37,23 +37,23 @@ func benchmarkSpade(b *testing.B, n int, m int, l int64, v int) {
 	b.Run("Register", func(b *testing.B) {
 		for i := 0; i < n; i++ {
 			alphas[i] = spade.RandomElementInZMod()
-			regKeys[i] = spade.register(alphas[i])
+			regKeys[i] = spade.Register(alphas[i])
 		}
 	})
 
 	b.Run("Encryption", func(b *testing.B) {
 		b.ResetTimer()
-		ciphertexts = spade.encrypt(pks, alphas[0], dummyData[0])
+		ciphertexts = spade.Encrypt(pks, alphas[0], dummyData[0])
 	})
 
-	b.Run("keyDerivation", func(b *testing.B) {
+	b.Run("KeyDerivation", func(b *testing.B) {
 		b.ResetTimer()
-		dks = spade.keyDerivation(0, v, sks, regKeys)
+		dks = spade.KeyDerivation(0, v, sks, regKeys)
 	})
 
 	b.Run("Decryption", func(b *testing.B) {
 		b.ResetTimer()
-		res = spade.decrypt(dks, v, ciphertexts)
+		res = spade.Decrypt(dks, v, ciphertexts)
 	})
 
 	if len(res) != len(dummyData[0]) {

@@ -3,7 +3,6 @@ package utils
 import (
 	"bufio"
 	"fmt"
-	"math/big"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -18,11 +17,9 @@ func HandleError(e error) {
 }
 
 // NormalizeDatasets this function removes zeros from hypnogram values
-// by adding 1 to all elements
+// by adding `normVal` to all elements
 // Do not run this twice :)
-func NormalizeDatasets() {
-	dir := "../usecases/dataset"
-
+func NormalizeDatasets(dir string, normVal int) {
 	// Read all files in the directory
 	files, err := os.ReadDir(dir)
 	if err != nil {
@@ -31,7 +28,6 @@ func NormalizeDatasets() {
 	}
 	print("number of files: ", len(files))
 
-	// Loop through each file in the directory
 	for _, fileInfo := range files {
 		// Check if the file is a .txt file
 		if filepath.Ext(fileInfo.Name()) == ".txt" {
@@ -53,7 +49,7 @@ func NormalizeDatasets() {
 					fmt.Printf("Error parsing integer from file %s: %v\n", filePath, err)
 					continue
 				}
-				modifiedIntegers = append(modifiedIntegers, number-1)
+				modifiedIntegers = append(modifiedIntegers, number+normVal)
 			}
 
 			if err := scanner.Err(); err != nil {
@@ -89,8 +85,32 @@ func NormalizeDatasets() {
 
 }
 
-func CountValues(data []*big.Int, v int) {
+func ReadFile(path string) []int {
+	file, err := os.Open(path)
+	if err != nil {
+		fmt.Printf("Error opening file %s: %v\n", path, err)
+		return nil
+	}
+	defer file.Close()
 
+	scanner := bufio.NewScanner(file)
+	data := make([]int, 0)
+
+	for scanner.Scan() {
+		item, err := strconv.Atoi(scanner.Text())
+		if err != nil {
+			fmt.Printf("Error parsing integer from file %s: %v\n", path, err)
+			continue
+		}
+		data = append(data, item)
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("Error scanning file %s: %v\n", path, err)
+		return nil
+	}
+
+	return data
 }
 
 // GenDummyData generate dummy a vector of integers with "ptVecSize" elements,

@@ -1,1 +1,43 @@
 package SPADE
+
+import (
+	"SPADE/utils"
+	"fmt"
+	"testing"
+)
+
+func TestVanilla(t *testing.T) {
+	queryValue := 1
+	datasetDir := "./usecases/dataset"
+	fileName := "/b000101.txt"
+	data := utils.ReadFile(datasetDir + fileName)
+
+	num := testQueryTotalNum(t, data, queryValue)
+	resMap := testQueryNumRep(t, data, queryValue)
+
+	fmt.Println("=== Number of (", queryValue, "): ", num)
+	fmt.Println("=== Duration of (", queryValue, "): ", resMap)
+	fmt.Println("=== #Transitions of (", queryValue, "): ", len(resMap))
+}
+
+func testQueryNumRep(t *testing.T, data []int, value int) map[int]int {
+	var res map[int]int
+	vanilla := NewVanilla()
+
+	t.Run("Query Num Rep", func(t *testing.T) {
+		res = vanilla.queryNumRep(data, value)
+	})
+
+	return res
+}
+
+func testQueryTotalNum(t *testing.T, data []int, value int) int {
+	var res int
+	vanilla := NewVanilla()
+
+	t.Run("Query Total Num", func(t *testing.T) {
+		res = vanilla.queryTotalNum(data, value)
+	})
+
+	return res
+}

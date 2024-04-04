@@ -1,40 +1,36 @@
 package SPADE
 
-import "strconv"
-
 type Vanilla struct {
 }
 
-// NewVanilla returns new instantiation of vanilla search method with "nil" values
+// NewVanilla returns new instantiation of vanilla search methods with "nil" values
 func NewVanilla() *Vanilla {
 	return &Vanilla{}
 }
 
-// countOccurrences uses Hash Table (for Unsorted Arrays) to count the number of all occurrences,
-// This method works well for unsorted arrays and has a time complexity of O(d),
-// where d is the number of digits in the number
-func (vanilla *Vanilla) countOccurrences(data []int) map[int]int {
-	digitCounts := make(map[int]int)
-
-	for _, num := range data {
-		numStr := strconv.Itoa(num)
-		for _, digitRune := range numStr {
-			digit, _ := strconv.Atoi(string(digitRune))
-			digitCounts[digit]++
-		}
-	}
-
-	return digitCounts
-}
-
-// countDirect uses loop for counting the number of occurrences for specific value,
-// has complexity of O(n), where n is the len of data
-func (vanilla *Vanilla) countDirect(data []int, value int) int {
+// queryTotalNum counting the total number of occurrences for a value
+func (vanilla *Vanilla) queryTotalNum(data []int, value int) int {
 	count := 0
-	for i := range data {
-		if i == value {
+	for _, item := range data {
+		if item == value {
 			count++
 		}
 	}
 	return count
+}
+
+// queryNumRep count the number of repeat for a value in a sequence
+// shows the duration of the query value and the number of Transition to that value
+func (vanilla *Vanilla) queryNumRep(data []int, value int) map[int]int {
+	digitCounts := make(map[int]int)
+	j := 0
+	for i, item := range data {
+		if item == value {
+			digitCounts[j]++
+		} else {
+			j = i + 1
+		}
+	}
+
+	return digitCounts
 }
