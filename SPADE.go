@@ -18,12 +18,12 @@ type SPADE struct {
 }
 
 // NewSpade returns new instantiation of spade with "nil" values
-func NewSpade() *SPADE {
+func NewSpade(q, g *big.Int) *SPADE {
 	return &SPADE{
 		n: 0,
 		m: 0,
-		q: nil,
-		g: nil,
+		q: q,
+		g: g,
 	}
 }
 
@@ -33,17 +33,13 @@ func NewSpade() *SPADE {
 func (spade *SPADE) Setup(numUsers, ptVecSize int) ([]*big.Int, []*big.Int) {
 	spade.n = numUsers
 	spade.m = ptVecSize
-	// q = (2 ^ 128) + 1
-	spade.q = new(big.Int).Exp(big.NewInt(2), big.NewInt(128), nil)
-	spade.q.Add(spade.q, big.NewInt(1))
 
-	spade.g = spade.RandomElementInZMod()
 	sks := make([]*big.Int, ptVecSize)
 	pks := make([]*big.Int, ptVecSize)
 
 	// generate secret and public keys
 	for i := 0; i < ptVecSize; i++ {
-		sks[i] = spade.RandomElementInZMod()
+		sks[i] = RandomElementInZMod(spade.q)
 		pks[i] = new(big.Int).Exp(spade.g, sks[i], spade.q)
 	}
 
@@ -74,7 +70,7 @@ func (spade *SPADE) Encrypt(pks []*big.Int, alpha *big.Int, data []int) [][]*big
 	c := make([][]*big.Int, dataSize)
 
 	for i := 0; i < dataSize; i++ {
-		r := spade.RandomElementInZMod()
+		r := RandomElementInZMod(spade.q)
 		// Ensure ri is odd
 		if r.Bit(0) == 0 {
 			r.Add(r, big.NewInt(1))
@@ -127,8 +123,8 @@ func (spade *SPADE) Decrypt(dk []*big.Int, value int, ciphertexts [][]*big.Int) 
 }
 
 // RandomElementInZMod generates a random element from "Zq" correspond to q
-func (spade *SPADE) RandomElementInZMod() *big.Int {
-	r, err := rand.Int(rand.Reader, spade.q)
+func RandomElementInZMod(q *big.Int) *big.Int {
+	r, err := rand.Int(rand.Reader, q)
 	utils.HandleError(err)
 	return r
 }

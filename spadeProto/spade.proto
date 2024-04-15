@@ -7,15 +7,17 @@ option go_package = "./";
 // Define empty message for functions returning nil
 message Empty{}
 
-message PublicParams {
-  int64 N = 1;  // n number of users
-  int64 M = 2;  // m maximum size of plaintext vector
-  bytes Q = 3;  // Store q as bytes
-  bytes G = 4;  // Store g as bytes
+message PublicParamsReq {}
+
+message PublicParamsRes {
+  bytes q = 1;  // Store q as bytes
+  bytes g = 2;  // Store g as bytes
+  repeated bytes mpk = 3; // Store mpk as bytes
 }
 
 //message
 
 service Curator {
-  rpc Setup(PublicParams) returns (Empty) {}
+  rpc GetPublicParams(PublicParamsReq) returns (PublicParamsRes) {}
+
 }

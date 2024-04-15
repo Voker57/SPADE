@@ -21,8 +21,13 @@ func TestSpade(t *testing.T) {
 
 func testSpade(t *testing.T, n int, m int, l int64, v int) {
 	dummyData := utils.GenDummyData(n, m, l)
+	// generate q, q = (2 ^ 128) + 1
+	q := new(big.Int).Exp(big.NewInt(2), big.NewInt(128), nil)
+	q.Add(q, big.NewInt(1))
+	// generate g
+	g := RandomElementInZMod(q)
 
-	spade := NewSpade()
+	spade := NewSpade(q, g)
 	var sks, pks, dks, res []*big.Int
 	var ciphertexts [][]*big.Int
 
@@ -36,13 +41,13 @@ func testSpade(t *testing.T, n int, m int, l int64, v int) {
 
 	// test only one user registration
 	t.Run("Register", func(t *testing.T) {
-		alphas[0] = spade.RandomElementInZMod()
+		alphas[0] = RandomElementInZMod(q)
 		regKeys[0] = spade.Register(alphas[0])
 	})
 
 	// do the registration for the rest of users
 	for i := 1; i < n; i++ {
-		alphas[i] = spade.RandomElementInZMod()
+		alphas[i] = RandomElementInZMod(q)
 		regKeys[i] = spade.Register(alphas[i])
 	}
 

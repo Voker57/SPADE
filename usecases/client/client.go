@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"log"
 	"math/big"
-	"os"
 	"time"
 )
 
@@ -27,19 +26,37 @@ func main() {
 	defer conn.Close()
 
 	c := pb.NewCuratorClient(conn)
-	name := "greeting"
-	if len(os.Args) > 1 {
-		name = os.Args[1]
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	r, err := c.Setup(ctx, &pb.PublicParams{M: name})
-
+	q, g, _, err := getPublicParams(c.GetPublicParams(ctx, &pb.PublicParamsReq{}))
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
+	utils.HexPrintBigInt("q", q)
+	utils.HexPrintBigInt("g", g)
+}
 
-	log.Printf("Greeting: %s", r.Msg)
+func getPublicParams(res *pb.PublicParamsRes, err error) (*big.Int, *big.Int, []*big.Int, error) {
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Unmarshal q, g
+	q := new(big.Int)
+	q.SetBytes(res.Q)
+
+	g := new(big.Int)
+	g.SetBytes(res.G)
+
+	// Unmarshal mpk (slice of big.Int)
+	mpk := make([]*big.Int, 0, len(res.Mpk))
+	for _, mpkBytes := range res.Mpk {
+		temp := new(big.Int)
+		temp.SetBytes(mpkBytes)
+		mpk = append(mpk, temp)
+	}
+
+	return q, g, mpk, nil
 }

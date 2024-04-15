@@ -21,7 +21,13 @@ func benchmarkSpade(b *testing.B, n int, m int, l int64, v int) {
 
 	dummyData := utils.GenDummyData(n, m, l)
 
-	spade := NewSpade()
+	// generate q, q = (2 ^ 128) + 1
+	q := new(big.Int).Exp(big.NewInt(2), big.NewInt(128), nil)
+	q.Add(q, big.NewInt(1))
+	// generate g
+	g := RandomElementInZMod(q)
+
+	spade := NewSpade(q, g)
 	var sks, pks, dks, res []*big.Int
 	var ciphertexts [][]*big.Int
 
@@ -36,7 +42,7 @@ func benchmarkSpade(b *testing.B, n int, m int, l int64, v int) {
 
 	b.Run("Register", func(b *testing.B) {
 		for i := 0; i < n; i++ {
-			alphas[i] = spade.RandomElementInZMod()
+			alphas[i] = RandomElementInZMod(q)
 			regKeys[i] = spade.Register(alphas[i])
 		}
 	})

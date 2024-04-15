@@ -12,35 +12,68 @@ import (
 	"net"
 )
 
-type curator struct {
-	sks   []*big.Int
-	pks   []*big.Int
-	spade *SPADE.SPADE
+const numUser = 10
+const maxVecS = 1000
+
+type Curator struct {
+	q           *big.Int
+	g           *big.Int
+	sks         []*big.Int
+	pks         []*big.Int
+	regKeys     []*big.Int
+	ciphertexts [][][]*big.Int
+	spade       *SPADE.SPADE
 }
 
 type server struct {
 	pb.UnimplementedCuratorServer
 }
 
-func NewCurator() *curator {
-	return &curator{
-		sks:   nil,
-		pks:   nil,
-		spade: nil,
+func NewCurator() *Curator {
+	return &Curator{
+		q:           nil,
+		g:           nil,
+		sks:         nil,
+		pks:         nil,
+		regKeys:     nil,
+		ciphertexts: nil,
+		spade:       nil,
 	}
 }
 
-// Setup generates the secret and public keys when you want to initialize the system
-func (cur curator) Setup(numUser, maxVecSize int) {
-	spd := SPADE.NewSpade()
-	cur.sks, cur.pks = spd.Setup(numUser, maxVecSize)
-	cur.spade = spd
-}
+func (s *server) GetPublicParams(ctx context.Context, in *pb.PublicParamsReq) (*pb.PublicParamsRes, error) {
+	log.Printf("CURATOR >>> Received GetPublicParams req!")
 
-func (s *server) Setup(ctx context.Context, in *pb.PublicParams) (*pb.Empty, error) {
-	log.Printf("Received: %v", in.GetM())
-	//return &pb.HelloRep{Msg: "Hello, " + in.GetMsg()}, nil
-	return &pb.Empty{}, nil
+	cur := NewCurator()
+	// generate q, q = (2 ^ 128) + 1
+	q := new(big.Int).Exp(big.NewInt(2), big.NewInt(128), nil)
+	q.Add(q, big.NewInt(1))
+	// generate g
+	g := SPADE.RandomElementInZMod(q)
+	cur.q = q
+	cur.g = g
+	spd := SPADE.NewSpade(q, g)
+	cur.sks, cur.pks = spd.Setup(numUser, maxVecS)
+	cur.regKeys = make([]*big.Int, numUser)
+	cur.ciphertexts = make([][][]*big.Int, numUser)
+	cur.spade = spd
+
+	// print q, g for debug
+	utils.HexPrintBigInt("q", cur.q)
+	utils.HexPrintBigInt("g", cur.g)
+
+	qBytes := cur.q.Bytes()
+	gBytes := cur.g.Bytes()
+	mpkBytes := make([][]byte, 0, len(cur.pks)) // Pre-allocate for efficiency
+	for _, pk := range cur.pks {
+		mpkBytes = append(mpkBytes, pk.Bytes())
+	}
+
+	return &pb.PublicParamsRes{
+		Q:   qBytes,
+		G:   gBytes,
+		Mpk: mpkBytes,
+	}, nil
 }
 
 func main() {
@@ -57,9 +90,5 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
-
-	// setup spade
-	cur := NewCurator()
-	cur.Setup(1, 1000)
 
 }

@@ -3,6 +3,7 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"math/big"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -128,4 +129,9 @@ func GenDummyData(numUsers, ptVecSize int, maxValue int64) [][]int {
 	}
 
 	return dummyData
+}
+
+// HexPrintBigInt converts a big integer to a hexadecimal format and print it
+func HexPrintBigInt(label string, n *big.Int) {
+	fmt.Println("=== HBG: ", label, ":", fmt.Sprintf("%x", n))
 }
