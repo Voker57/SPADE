@@ -1,0 +1,21 @@
+// [START declaration]
+syntax = "proto3";
+package spadeproto;
+option go_package = "./";
+// [END declaration]
+
+// Define empty message for functions returning nil
+message Empty{}
+
+message PublicParams {
+  int64 N = 1;  // n number of users
+  int64 M = 2;  // m maximum size of plaintext vector
+  bytes Q = 3;  // Store q as bytes
+  bytes G = 4;  // Store g as bytes
+}
+
+//message
+
+service Curator {
+  rpc Setup(PublicParams) returns (Empty) {}
+}

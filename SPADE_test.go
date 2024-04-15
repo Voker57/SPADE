@@ -13,7 +13,7 @@ func TestSpade(t *testing.T) {
 		testSpade(t, tc.n, tc.m, tc.l, tc.v)
 	}
 
-	// to manually select test case
+	//To manually select test case
 	//tc := TestVector[0]
 	//fmt.Println(TestString("SPADE", tc))
 	//testSpade(t, tc.n, tc.m, tc.l, tc.v)
@@ -30,11 +30,11 @@ func testSpade(t *testing.T, n int, m int, l int64, v int) {
 		sks, pks = spade.Setup(n, m)
 	})
 
-	// create dummy registration keys
+	// initialize registration keys
 	alphas := make([]*big.Int, n)
 	regKeys := make([]*big.Int, n)
 
-	// to test one user registration
+	// test only one user registration
 	t.Run("Register", func(t *testing.T) {
 		alphas[0] = spade.RandomElementInZMod()
 		regKeys[0] = spade.Register(alphas[0])

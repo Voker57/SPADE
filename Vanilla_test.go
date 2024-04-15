@@ -25,7 +25,7 @@ func testQueryNumRep(t *testing.T, data []int, value int) map[int]int {
 	vanilla := NewVanilla()
 
 	t.Run("Query Num Rep", func(t *testing.T) {
-		res = vanilla.queryNumRep(data, value)
+		res = vanilla.QueryNumRep(data, value)
 	})
 
 	return res
@@ -36,7 +36,7 @@ func testQueryTotalNum(t *testing.T, data []int, value int) int {
 	vanilla := NewVanilla()
 
 	t.Run("Query Total Num", func(t *testing.T) {
-		res = vanilla.queryTotalNum(data, value)
+		res = vanilla.QueryTotalNum(data, value)
 	})
 
 	return res

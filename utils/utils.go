@@ -9,6 +9,8 @@ import (
 	"strconv"
 )
 
+const Port = 50505
+
 // HandleError check the error if err then panic
 func HandleError(e error) {
 	if e != nil {
