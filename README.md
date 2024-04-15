@@ -1,5 +1,5 @@
 # SPADE
-**SPADE**: Digging into **S**elective and **PA**rtial **DE**cryption using Functional Encryption
+**SPADE**:**S**elective and **PA**rtial **DE**cryption using Functional Encryption
 
 
 ## Limitations
