@@ -10,34 +10,34 @@ import (
 func TestSpade(t *testing.T) {
 	for _, tc := range TestVector {
 		fmt.Println(TestString("SPADE", tc))
-		testSpade(t, tc.n, tc.m, tc.l, tc.v)
+		testSpade(t, tc.m, tc.n, tc.l, tc.v)
 	}
 
 	//To manually select test case
-	//tc := TestVector[0]
+	//tc := TestVector[1]
 	//fmt.Println(TestString("SPADE", tc))
 	//testSpade(t, tc.n, tc.m, tc.l, tc.v)
 }
 
-func testSpade(t *testing.T, n int, m int, l int64, v int) {
-	dummyData := utils.GenDummyData(n, m, l)
+func testSpade(t *testing.T, m int, n int, l int64, v int) {
+	dummyData := utils.GenDummyData(m, n, l)
 	// generate q, q = (2 ^ 128) + 1
 	q := new(big.Int).Exp(big.NewInt(2), big.NewInt(128), nil)
 	q.Add(q, big.NewInt(1))
 	// generate g
 	g := RandomElementInZMod(q)
 
-	spade := NewSpade(q, g)
+	spade := NewSpade(q, g, n)
 	var sks, pks, dks, res []*big.Int
 	var ciphertexts [][]*big.Int
 
 	t.Run("Setup", func(t *testing.T) {
-		sks, pks = spade.Setup(n, m)
+		sks, pks = spade.Setup()
 	})
 
 	// initialize registration keys
-	alphas := make([]*big.Int, n)
-	regKeys := make([]*big.Int, n)
+	alphas := make([]*big.Int, m)
+	regKeys := make([]*big.Int, m)
 
 	// test only one user registration
 	t.Run("Register", func(t *testing.T) {
@@ -46,7 +46,7 @@ func testSpade(t *testing.T, n int, m int, l int64, v int) {
 	})
 
 	// do the registration for the rest of users
-	for i := 1; i < n; i++ {
+	for i := 1; i < m; i++ {
 		alphas[i] = RandomElementInZMod(q)
 		regKeys[i] = spade.Register(alphas[i])
 	}
@@ -56,7 +56,7 @@ func testSpade(t *testing.T, n int, m int, l int64, v int) {
 	})
 
 	t.Run("KeyDerivation", func(t *testing.T) {
-		dks = spade.KeyDerivation(0, v, sks, regKeys)
+		dks = spade.KeyDerivation(0, v, sks, regKeys[0])
 	})
 
 	t.Run("Decryption", func(t *testing.T) {
@@ -69,27 +69,5 @@ func testSpade(t *testing.T, n int, m int, l int64, v int) {
 
 	//fmt.Println("data: ", dummyData[0])
 	//fmt.Println("res: ", res)
-	verifyResults(dummyData[0], res, v)
-}
-
-func verifyResults(originalData []int, res []*big.Int, v int) {
-	nMatchEls := 0
-	for i := 0; i < len(originalData); i++ {
-		if originalData[i] == v {
-			// i: the index for match query value in the original dataset
-			// check to see if the decrypted value from results for the same
-			// index i is 1 or not, 1 means that the query value match there.
-			one := new(big.Int).SetInt64(int64(1))
-			if res[i].Cmp(one) != 0 {
-				// the index from result vector does not match with the index for original dataset,
-				// which means that we are not getting the correct results!!
-				nMatchEls++
-			}
-		}
-	}
-	if nMatchEls != 0 {
-		fmt.Println("=== FAIL: there are ", nMatchEls, " elements from the results vector, that are not equal to the original data!")
-	} else {
-		fmt.Println("=== PASS: Hooray!")
-	}
+	utils.VerifyResults(dummyData[0], res, v)
 }

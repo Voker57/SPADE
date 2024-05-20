@@ -13,10 +13,10 @@ const (
 type TestContext struct {
 	// tc test case
 	tc TestCase
-	// n number of users
-	n int
-	// m plaintext vector size
+	// m number of users
 	m int
+	// n maximum plaintext vector size
+	n int
 	// l maximum value for data range
 	l int64
 	// query value for decryption key generation
@@ -26,22 +26,29 @@ type TestContext struct {
 var TestVector = []TestContext{
 	{
 		tc: S,
-		n:  10,
-		m:  100,
+		m:  10,
+		n:  1000,
 		l:  10,
 		v:  1,
 	},
 	{
 		tc: M,
-		n:  100,
-		m:  10000,
+		m:  100,
+		n:  10000,
 		l:  10,
 		v:  1,
 	},
 	{
 		tc: L,
-		n:  1000,
-		m:  100000,
+		m:  1000,
+		n:  50000,
+		l:  10,
+		v:  1,
+	},
+	{
+		tc: L,
+		m:  10000,
+		n:  100000,
 		l:  10,
 		v:  1,
 	},
@@ -49,5 +56,5 @@ var TestVector = []TestContext{
 
 func TestString(name string, t TestContext) string {
 	return fmt.Sprintf("=== %s: NumberOfUsers=%d, DataSize=%d, MaxDataValue=%d, QueryValue=%d",
-		name, t.n, t.m, t.l, t.v)
+		name, t.m, t.n, t.l, t.v)
 }

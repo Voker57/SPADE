@@ -9,15 +9,35 @@ message Empty{}
 
 message PublicParamsReq {}
 
-message PublicParamsRes {
+message PublicParamsResp {
   bytes q = 1;  // Store q as bytes
   bytes g = 2;  // Store g as bytes
   repeated bytes mpk = 3; // Store mpk as bytes
 }
 
-//message
+message UserReq {
+  int64 id = 1; // user's identifier
+  bytes regKey = 2; // user's registration key
+  repeated bytes ciphertext = 3; // user's encrypted data
+}
+
+message UserResp{
+  bool flag = 1; // OK or Not
+}
+
+message AnalystReq {
+  int64 id = 1; // the corresponding user id for accessing his/her ciphertext
+  int64 value = 2; // the value for search query, which Analyst is looking for
+}
+
+message AnalystResp {
+  repeated bytes dkv = 1; // corresponding decryption key for query value
+  repeated bytes ciphertext = 2; // corresponding user's ciphertext
+}
+
 
 service Curator {
-  rpc GetPublicParams(PublicParamsReq) returns (PublicParamsRes) {}
-
+  rpc GetPublicParams(PublicParamsReq) returns (PublicParamsResp) {}
+  rpc UserRequest(UserReq) returns (UserResp) {}
+  rpc Query(AnalystReq) returns (AnalystResp) {}
 }

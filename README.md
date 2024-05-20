@@ -1,13 +1,9 @@
-# SPADE: Digging into **S**elective and **PA**rtial **DE**cryption using Functional Encryption
+# SPADE: **S**elective and **PA**rtial **DE**cryption using Functional Encryption
 
 SPADE is an FE-based scheme that enables running selective and partial decryption queries over
 vectors of ciphertexts.
 
-```math
-x \times y=x.y
-```
-
-To see a real-world application of SPADE please check [this](URL).
+To see a real-world application of SPADE please check [this](https://github.com/harpocrates-project/SPADE/blob/main/usecases/README.md).
 
 ## Notes
 

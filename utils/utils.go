@@ -3,6 +3,7 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"google.golang.org/protobuf/proto"
 	"math/big"
 	"math/rand"
 	"os"
@@ -19,10 +20,14 @@ func HandleError(e error) {
 	}
 }
 
-// NormalizeDatasets this function removes zeros from hypnogram values
+/**
+ * Hypnogram Dataset
+ */
+
+// NormalizeHypnogramDatasets this function removes zeros from hypnogram values
 // by adding `normVal` to all elements
 // Do not run this twice :)
-func NormalizeDatasets(dir string, normVal int) {
+func NormalizeHypnogramDatasets(dir string, normVal int) {
 	// Read all files in the directory
 	files, err := os.ReadDir(dir)
 	if err != nil {
@@ -88,7 +93,8 @@ func NormalizeDatasets(dir string, normVal int) {
 
 }
 
-func ReadFile(path string) []int {
+// ReadHypnogramFile accepts as input a hypnogram file path and returns file's content as a vector of integers
+func ReadHypnogramFile(path string) []int {
 	file, err := os.Open(path)
 	if err != nil {
 		fmt.Printf("Error opening file %s: %v\n", path, err)
@@ -116,6 +122,70 @@ func ReadFile(path string) []int {
 	return data
 }
 
+// SaveInFile accepts create a file within the path and save the data
+func SaveInFile(path string, data [][]*big.Int) error {
+	// Open the file for writing
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Create a buffered writer for efficient writing
+	writer := bufio.NewWriter(file)
+
+	// Iterate over the rows of the slice
+	for _, row := range data {
+		// Iterate over the elements of each row
+		for _, num := range row {
+			// Write the big.Int value as a string to the file
+			_, err := writer.WriteString(num.String() + " ")
+			if err != nil {
+				return err
+			}
+		}
+		// Write a newline character to separate rows
+		_, err := writer.WriteString("\n")
+		if err != nil {
+			return err
+		}
+	}
+
+	// Flush the buffered writer to ensure all data is written to the file
+	err = writer.Flush()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteFile we use this function to remove database file after server stops working
+func DeleteFile(path string) {
+	err := os.Remove(path)
+	if err != nil {
+		fmt.Printf("Error deleting file %s: %v\n", path, err)
+	} else {
+		fmt.Println("Successfully deleted file:", path)
+	}
+}
+
+// AddPadding adds a fixed padding item to an array of integers up to a maxLength and return the new array
+func AddPadding(paddingItem int, maxLength int, data []int) []int {
+	if len(data) >= maxLength {
+		//fmt.Println(">>> The Data length is already larger or equal with the max length!")
+		return data[:maxLength]
+	} else {
+		newData := make([]int, 0, maxLength)
+		newData = append(newData, data...)
+		paddingCount := maxLength - len(data)
+		for i := 0; i < paddingCount; i++ {
+			newData = append(newData, paddingItem)
+		}
+		return newData
+	}
+}
+
 // GenDummyData generate dummy a vector of integers with "ptVecSize" elements,
 // for each user, the values are going to be between 1 and "maxValue"
 func GenDummyData(numUsers, ptVecSize int, maxValue int64) [][]int {
@@ -131,7 +201,107 @@ func GenDummyData(numUsers, ptVecSize int, maxValue int64) [][]int {
 	return dummyData
 }
 
-// HexPrintBigInt converts a big integer to a hexadecimal format and print it
-func HexPrintBigInt(label string, n *big.Int) {
-	fmt.Println("=== HBG: ", label, ":", fmt.Sprintf("%x", n))
+// PrintBigIntHex converts a big integer to a hexadecimal format and print it
+func PrintBigIntHex(label string, n *big.Int) {
+	fmt.Println(">>> ", label, ":", fmt.Sprintf("%x", n))
+}
+
+// VerifyResults check the decryption results and the original values to see the
+// match elements for the result we got from the decryption function
+func VerifyResults(originalData []int, res []*big.Int, v int) {
+	nMatchEls := 0
+	for i := 0; i < len(originalData); i++ {
+		if originalData[i] == v {
+			// i: the index for match query value in the original dataset
+			// check to see if the decrypted value from results for the same
+			// index i is 1 or not, 1 means that the query value match there.
+			one := new(big.Int).SetInt64(int64(1))
+			if res[i].Cmp(one) != 0 {
+				// the index from result vector does not match with the index for original dataset,
+				// which means that we are not getting the correct results!!
+				nMatchEls++
+			}
+		}
+	}
+	if nMatchEls != 0 {
+		fmt.Println("=== FAIL: there are ", nMatchEls, " elements from the results vector, that are not equal to the original data!")
+	} else {
+		fmt.Println("=== PASS: Hooray!")
+	}
+}
+
+// PrintMessageSize takes a proto.Message m as input and prints its size in byte
+func PrintMessageSize(m proto.Message) {
+	mSizeBytes := proto.Size(m)
+	fmt.Printf(">>> Protobuf message size: %d bytes\n", mSizeBytes)
+	mSizeMB := float64(mSizeBytes) / (1024 * 1024)
+	fmt.Printf(">>> Protobuf message size: %f MB\n", mSizeMB)
+}
+
+/**
+ * DNA Dataset
+ */
+
+// ReadDNASeqFile opens a DNA seq file and returns its content as an array of strings
+func ReadDNASeqFile(filename string) []string {
+	file, err := os.Open(filename)
+	if err != nil {
+		fmt.Printf("Error opening file %s: %v\n", filename, err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	data := make([]string, 0)
+	for scanner.Scan() {
+		data = append(data, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("Error scanning file %s: %v\n", filename, err)
+	}
+	return data
+}
+
+// ConvertDNASeq2Dinucleotide accept a pair of dna sequence and break them down into
+// vector of dinucleotide elements
+func ConvertDNASeq2Dinucleotide(dnaSeq []string) []string {
+	dinucleotides := make([]string, 0)
+	for i := 0; i < len(dnaSeq); i++ {
+		for j := 0; j < len(dnaSeq[i])-1; j++ {
+			dinucleotides = append(dinucleotides, dnaSeq[i][j:j+2])
+		}
+	}
+	return dinucleotides
+}
+
+// MapDinucleotideToInt maps the converted DNA dinucleotides to integers using a pre-defined map
+// because SPADE only works with integers, and you must convert data into integers
+func MapDinucleotideToInt(dinucleotides []string) []int {
+	dinuMaps := map[string]int{
+		"AA": 1,
+		"AC": 2,
+		"AG": 3,
+		"AT": 4,
+		"CA": 5,
+		"CC": 6,
+		"CG": 7,
+		"CT": 8,
+		"GA": 9,
+		"GC": 10,
+		"GG": 11,
+		"GT": 12,
+		"TA": 13,
+		"TC": 14,
+		"TG": 15,
+		"TT": 16,
+	}
+	result := make([]int, len(dinucleotides))
+	for i, dinu := range dinucleotides {
+		value, ok := dinuMaps[dinu]
+		if !ok {
+			fmt.Printf("Warning: unknown dinucleotide: %s\n", dinu)
+			continue
+		}
+		result[i] = value
+	}
+	return result
 }

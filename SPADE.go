@@ -3,14 +3,13 @@ package SPADE
 import (
 	"SPADE/utils"
 	"crypto/rand"
+	"fmt"
 	"math/big"
 )
 
 type SPADE struct {
-	// n number of users
+	// n maximum size of plaintext vector
 	n int
-	// m maximum size of plaintext vector
-	m int
 	// q modulus
 	q *big.Int
 	// g generator
@@ -18,27 +17,23 @@ type SPADE struct {
 }
 
 // NewSpade returns new instantiation of spade with "nil" values
-func NewSpade(q, g *big.Int) *SPADE {
+func NewSpade(modulus, generator *big.Int, maxPtVecSize int) *SPADE {
 	return &SPADE{
-		n: 0,
-		m: 0,
-		q: q,
-		g: g,
+		n: maxPtVecSize,
+		q: modulus,
+		g: generator,
 	}
 }
 
 // Setup generates q and g based on plaintext vector size m and number of users n,
 // then generates master public keys "pks" (encryption key) and master secret keys "sks",
 // the number of keys for both "pks" and "sks" is bounded to the m, returns the "sks" and "pks"
-func (spade *SPADE) Setup(numUsers, ptVecSize int) ([]*big.Int, []*big.Int) {
-	spade.n = numUsers
-	spade.m = ptVecSize
-
-	sks := make([]*big.Int, ptVecSize)
-	pks := make([]*big.Int, ptVecSize)
+func (spade *SPADE) Setup() ([]*big.Int, []*big.Int) {
+	sks := make([]*big.Int, spade.n)
+	pks := make([]*big.Int, spade.n)
 
 	// generate secret and public keys
-	for i := 0; i < ptVecSize; i++ {
+	for i := 0; i < spade.n; i++ {
 		sks[i] = RandomElementInZMod(spade.q)
 		pks[i] = new(big.Int).Exp(spade.g, sks[i], spade.q)
 	}
@@ -63,8 +58,9 @@ func (spade *SPADE) Encrypt(pks []*big.Int, alpha *big.Int, data []int) [][]*big
 	g := spade.g
 
 	dataSize := len(data)
-	if dataSize != spade.m {
-		panic("=== The input vector length does not matches the Setup parameters!")
+	if dataSize != spade.n {
+		err := fmt.Sprintf("=== The input vector length does not matches the Setup parameters! %d != %d", dataSize, spade.n)
+		panic(err)
 	}
 
 	c := make([][]*big.Int, dataSize)
@@ -83,6 +79,7 @@ func (spade *SPADE) Encrypt(pks []*big.Int, alpha *big.Int, data []int) [][]*big
 		cI1 := new(big.Int).Mul(
 			new(big.Int).Exp(pks[i], alpha, q),
 			new(big.Int).Exp(new(big.Int).Exp(g, r, q), mI, q))
+		cI1 = cI1.Mod(cI1, q)
 		// c_i = [cI0, cI1]
 		c[i] = []*big.Int{cI0, cI1}
 	}
@@ -92,16 +89,13 @@ func (spade *SPADE) Encrypt(pks []*big.Int, alpha *big.Int, data []int) [][]*big
 
 // KeyDerivation generates the decryption keys for specific query value "v",
 // where the query is to be executed for a specific user "id",
-// by using master secret key vector "sks", users' registration keys "regKeys"
+// by using master secret key vector "sks", user's registration key "regKey"
 // returns decryption keys "dk"
-func (spade *SPADE) KeyDerivation(id, value int, sks []*big.Int, regKeys []*big.Int) []*big.Int {
+func (spade *SPADE) KeyDerivation(id, value int, sks []*big.Int, regKey *big.Int) []*big.Int {
 	q := spade.q
-	//g := spade.g
-	regKey := regKeys[id]
 
-	dk := make([]*big.Int, spade.m)
-	for i := 0; i < spade.m; i++ {
-		//dk[i] = new(big.Int).Exp(g, new(big.Int).Mul(regKey, new(big.Int).Sub(new(big.Int).SetInt64(int64(value)), sks[i])), q)
+	dk := make([]*big.Int, spade.n)
+	for i := 0; i < spade.n; i++ {
 		dk[i] = new(big.Int).Exp(regKey, new(big.Int).Sub(new(big.Int).SetInt64(int64(value)), sks[i]), q)
 	}
 	return dk
@@ -111,8 +105,8 @@ func (spade *SPADE) KeyDerivation(id, value int, sks []*big.Int, regKeys []*big.
 // note: the value "v" must be the same value where the "dk" generated for (check KeyDerivation)
 func (spade *SPADE) Decrypt(dk []*big.Int, value int, ciphertexts [][]*big.Int) []*big.Int {
 	q := spade.q
-	results := make([]*big.Int, spade.m)
-	for i := 0; i < spade.m; i++ {
+	results := make([]*big.Int, spade.n)
+	for i := 0; i < spade.n; i++ {
 		ci := ciphertexts[i]
 		vb := new(big.Int).Neg(new(big.Int).SetInt64(int64(value)))
 		yi := new(big.Int).Mul(dk[i], new(big.Int).Mul(ci[1], new(big.Int).Exp(ci[0], vb, q)))
