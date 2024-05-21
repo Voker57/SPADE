@@ -10,6 +10,10 @@ The `use cases` demonstrate two practical applications of **SPADE** for DNA and 
 data. Besides, the `models` directory includes the entities' implementation for the centralized
 system model. To implement the client-server model, we utilized standard gRPC and protocol buffer libraries.
 
+**NOTE: To enable database management for use cases, we employed go-sqlite3, which requires gcc to be installed
+beforehand. [Here](https://github.com/mattn/go-sqlite3?tab=readme-ov-file#installation), you can check the requirements
+for go-sqlite3 installation.**
+
 ## System Model
 ```
 |-- models
