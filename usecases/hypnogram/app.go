@@ -30,8 +30,12 @@ func OpenDataset() [][]int {
 		if filepath.Ext(fileInfo.Name()) == ".txt" {
 			// Open the file
 			filePath := filepath.Join(dir, fileInfo.Name())
-			data := utils.AddPadding(PaddingItem, MaxVecSize, utils.ReadHypnogramFile(filePath))
+			hypnogram := utils.ReadHypnogramFile(filePath)
+			data := utils.AddPadding(PaddingItem, MaxVecSize, hypnogram)
 			dataset = append(dataset, data)
+			// for manual testing, I am just reading a single file from dataset
+			// to use the full test, please comment the following break
+			break
 		}
 	}
 	return dataset
@@ -68,7 +72,7 @@ func InitAnalyst() {
 	datasetDir := "./dataset/"
 	fileName := "b000101.txt"
 	data := utils.AddPadding(config.PaddingItem, config.MaxVecSize, utils.ReadHypnogramFile(datasetDir+fileName))
-	log.Println("Decrypted Data:", results)
+	//log.Println("Decrypted Data:", results)
 	utils.VerifyResults(data, results, int(queryValue))
 	log.Println(">>> Analyst's operations are done!")
 }

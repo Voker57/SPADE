@@ -3,9 +3,9 @@ package models
 import (
 	pb "SPADE/spadeProto"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	_ "github.com/mattn/go-sqlite3"
-	"google.golang.org/protobuf/proto"
 	"math/big"
 )
 
@@ -94,7 +94,7 @@ func (d dbHandler) GetUserReqById(userId int64) (*pb.UserReq, error) {
 	defer db.Close()
 
 	// Prepare the query
-	query := "SELECT ciphertext FROM " + d.TbName + " WHERE id = ?"
+	query := "SELECT regKey, ciphertext FROM " + d.TbName + " WHERE id = ?"
 	stmt, err := db.Prepare(query)
 	if err != nil {
 		return nil, err
@@ -102,8 +102,9 @@ func (d dbHandler) GetUserReqById(userId int64) (*pb.UserReq, error) {
 	defer stmt.Close()
 
 	// Execute the query with the user ID
-	var rawData []byte
-	err = stmt.QueryRow(userId).Scan(&rawData)
+	var regKey []byte
+	var ctx []byte // we stored it as []bytes
+	err = stmt.QueryRow(userId).Scan(&regKey, &ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// No user found with the ID
@@ -114,10 +115,21 @@ func (d dbHandler) GetUserReqById(userId int64) (*pb.UserReq, error) {
 
 	// Unmarshal the retrieved data back to UserReq
 	var userReq pb.UserReq
-	err = proto.Unmarshal(rawData, &userReq)
+	//err = proto.Unmarshal(rawData, &userReq)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	// Decode the retrieved ciphertext into [][]bytes
+	var cipherText [][]byte
+	err = json.Unmarshal(ctx, &cipherText)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
+
+	userReq.Id = userId
+	userReq.RegKey = regKey
+	userReq.Ciphertext = cipherText
 
 	// Return the user request
 	return &userReq, nil
@@ -125,10 +137,10 @@ func (d dbHandler) GetUserReqById(userId int64) (*pb.UserReq, error) {
 
 func (d dbHandler) InsertUsersCipher(data *pb.UserReq) error {
 	// Marshal user data to JSON bytes
-	row, err := proto.Marshal(data)
-	if err != nil {
-		return err
-	}
+	//row, err := proto.Marshal(data)
+	//if err != nil {
+	//	return err
+	//}
 
 	// open the database
 	db, err := sql.Open("sqlite3", d.DbName)
@@ -137,9 +149,15 @@ func (d dbHandler) InsertUsersCipher(data *pb.UserReq) error {
 	}
 	defer db.Close()
 
+	// we need to convert ciphertext from [][]bytes to []bytes to be able to store it using sqlite
+	ctx, err := json.Marshal(data.Ciphertext)
+	if err != nil {
+		panic(err)
+	}
+
 	// Insert the data into the table
 	insertQuery := "INSERT INTO " + d.TbName + " (id, regKey, ciphertext) VALUES (?, ?, ?)"
-	_, err = db.Exec(insertQuery, data.Id, row, row)
+	_, err = db.Exec(insertQuery, data.Id, data.RegKey, ctx)
 	if err != nil {
 		return err
 	}
@@ -156,6 +174,12 @@ func (d dbHandler) CreateUsersCipherTable() error {
 	}
 	defer db.Close()
 
+	// create the table if it doesn't exist (schema migration)
+	//_, err = db.Exec(`CREATE TABLE IF NOT EXISTS ` + d.TbName + ` (
+	//	id INTEGER PRIMARY KEY,
+	//	regKey BLOB,
+	//	ciphertext BLOB
+	//)`)
 	// create the table if it doesn't exist (schema migration)
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS ` + d.TbName + ` (
 		id INTEGER PRIMARY KEY,

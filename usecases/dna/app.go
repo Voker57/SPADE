@@ -40,7 +40,6 @@ func OpenDataset() [][]int {
 			break
 		}
 	}
-	fmt.Println("Dataset opened.")
 	return dataset
 }
 
@@ -97,7 +96,7 @@ func InitAnalyst() {
 	dNucs := utils.ConvertDNASeq2Dinucleotide(dnaSeq)
 	mappedDNucs := utils.MapDinucleotideToInt(dNucs)
 	data := utils.AddPadding(config.PaddingItem, config.MaxVecSize, mappedDNucs)
-	log.Println("Decrypted Data:", results)
+	//log.Println("Decrypted Data:", results)
 	utils.VerifyResults(data, results, int(queryValue))
 	log.Println(">>> Analyst's operations are done!")
 }
