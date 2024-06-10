@@ -3,7 +3,7 @@
 SPADE is an FE-based scheme that enables running selective and partial decryption queries over
 vectors of ciphertexts.
 
-To see a real-world application of SPADE please check [this](https://github.com/harpocrates-project/SPADE/blob/main/usecases/README.md).
+To see two real-world applications of SPADE please check [this](https://github.com/harpocrates-project/SPADE/blob/main/usecases/README.md).
 
 ## Notes
 
