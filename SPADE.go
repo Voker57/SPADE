@@ -53,7 +53,7 @@ func (spade *SPADE) Register(alpha *big.Int) *big.Int {
 
 // Encrypt encrypts a vector of integers "data" using master public key "pks" and user's "alpha",
 // returns Elgamal style ciphertext vector c = [[C0, C1], ..., [C0, C1]]
-func (spade *SPADE) Encrypt(pks []*big.Int, alpha *big.Int, data []int) [][]*big.Int {
+func (spade *SPADE) Encrypt(pks []*big.Int, alpha *big.Int, data []int, fakeR *big.Int) [][]*big.Int {
 	q := spade.q
 	g := spade.g
 
@@ -66,7 +66,7 @@ func (spade *SPADE) Encrypt(pks []*big.Int, alpha *big.Int, data []int) [][]*big
 	c := make([][]*big.Int, dataSize)
 
 	for i := 0; i < dataSize; i++ {
-		r := RandomElementInZMod(spade.q)
+		r := fakeR
 		// Ensure ri is odd
 		if r.Bit(0) == 0 {
 			r.Add(r, big.NewInt(1))

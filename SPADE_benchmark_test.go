@@ -53,7 +53,7 @@ func benchmarkSpade(b *testing.B, m int, n int, l int64, v int) {
 
 	b.Run("Encryption", func(b *testing.B) {
 		b.ResetTimer()
-		ciphertexts = spade.Encrypt(pks, alphas[0], dummyData[0])
+		ciphertexts = spade.Encrypt(pks, alphas[0], dummyData[0], new(big.Int).SetInt64(0))
 	})
 
 	b.Run("KeyDerivation", func(b *testing.B) {
